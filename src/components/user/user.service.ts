@@ -2,7 +2,7 @@ import { BadRequestException, Injectable, InternalServerErrorException, Logger }
 import { InjectModel } from '@nestjs/mongoose';
 import { Model } from 'mongoose';
 import { User } from 'src/libs/dto/user/user';
-import { UserSignupInput } from 'src/libs/dto/user/user.input';
+import { UserLoginInput, UserSignupInput } from 'src/libs/dto/user/user.input';
 import { AuthService } from '../auth/auth.service';
 import { Message } from 'src/libs/enums/common.enum';
 import { UserStatus } from 'src/libs/enums/user.enum';
@@ -74,4 +74,41 @@ export class UserService {
       throw new InternalServerErrorException(Message.CREATE_FAILED);
     }
   }
+
+ public async signIn(input: UserLoginInput): Promise<User> {
+    // Find user by email (include password)
+    const user = await this.userModel
+        .findOne({ userEmail: input.userEmail })
+        .select('+userPassword')
+        .exec();
+
+    // Check if user exists
+    if (!user || user.userStatus === UserStatus.DELETED) {
+        throw new BadRequestException(Message.NO_USER_FOUND);
+    }
+
+    // Check if user is blocked
+    if (user.userStatus === UserStatus.BLOCK) {
+        throw new BadRequestException(Message.BLOCKED_USER);
+    }
+
+    // Verify password
+   const isPasswordValid = await this.authService.comparePassword(
+    input.userPassword,
+    user.userPassword as string,  
+);
+
+    if (!isPasswordValid) {
+        throw new BadRequestException(Message.WRONG_PASSWORD);
+    }
+
+    // Generate JWT token
+    const token = await this.authService.createToken(user);
+
+    // Return user with token
+    return {
+        ...user.toObject(),
+        accessToken: token,
+    } as User;
+}
 }
