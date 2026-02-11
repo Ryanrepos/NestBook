@@ -19,7 +19,6 @@ export class UserService {
   public async signUp(input: UserSignupInput): Promise<User> {
     this.logger.log(`Signup attempt: ${input.userEmail}`);
 
-    // 1. Check if email already exists
     const existingEmail = await this.userModel.findOne({
       userEmail: input.userEmail,
     });
@@ -29,25 +28,22 @@ export class UserService {
       throw new BadRequestException(Message.USED_EMAIL_OR_USERNAME);
     }
 
-    // 2. Hash password
     const hashedPassword = await this.authService.hashPassword(
       input.userPassword,
     );
 
     try {
-      // 3. Create user with defaults
       const createdUser = await this.userModel.create({
         ...input,
         userPassword: hashedPassword,
         userStatus: UserStatus.ACTIVE,
+        // userImage: '/icons/default-user.svg',
       });
 
       this.logger.log(`User created successfully: ${createdUser._id}`);
 
-      // 4. Generate JWT token
       const token = await this.authService.createToken(createdUser);
 
-      // 5. Return user with token (password excluded by DTO)
       return {
         ...createdUser.toObject(),
         accessToken: token,
@@ -56,7 +52,6 @@ export class UserService {
     } catch (err) {
       this.logger.error(`Signup error: ${err.message}`);
 
-      // Handle MongoDB duplicate key error (backup check)
       if (err.code === 11000) {
         throw new BadRequestException(Message.USED_EMAIL_OR_USERNAME);
       }

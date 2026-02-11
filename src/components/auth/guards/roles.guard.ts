@@ -39,7 +39,6 @@ export class RolesGuard implements CanActivate {
         throw new ForbiddenException(Message.ONLY_SPECIFIC_ROLES_ALLOWED);
       }
 
-      console.log('userNick[roles] =>', authUser.userNick);
       request.body.authUser = authUser;
       return true;
     }

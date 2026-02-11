@@ -1,4 +1,4 @@
-import { Args, Mutation, Resolver } from '@nestjs/graphql';
+import { Args, Mutation, Query, Resolver } from '@nestjs/graphql';
 import { UserService } from './user.service';
 import { User } from '../../libs/dto/user/user';
 import { UserLoginInput, UserSignupInput } from 'src/libs/dto/user/user.input';
@@ -18,4 +18,9 @@ export class UserResolver {
         console.log("userResolver => signIn", input)
         return await this.userService.signIn(input);
     }
+
+     @Query(() => String)
+     hello(): string {
+     return 'Hello from NestBook API! 🚀';
+  }
 }

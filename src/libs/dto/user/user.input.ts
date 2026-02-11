@@ -10,12 +10,6 @@ export class UserSignupInput {
   @Field(() => String)
   userEmail: string;
 
-  // Nickname
-  @IsNotEmpty()
-  @Length(3, 20)
-  @Field(() => String)
-  userNick: string;
-
   // Password
   @IsNotEmpty()
   @Length(8, 50)  // ⭐ Kamida 8 ta belgi (xavfsizlik)

@@ -26,11 +26,7 @@ const userSchema = new Schema(
         index: { unique: true, sparse: true },
         required: true,
     },
-    userNick: {
-        type: String,
-        index: { unique: true, sparse: true },
-        required: true,
-    },
+
     userPassword: {
         type: String,
         select: false,

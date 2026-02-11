@@ -9,11 +9,6 @@ export class UserUpdate {
   _id: string;
 
   @IsOptional()
-  @Length(3, 20)
-  @Field(() => String, { nullable: true })
-  userNick?: string;
-
-  @IsOptional()
   @Length(8, 50)
   @Field(() => String, { nullable: true })
   userPassword?: string;

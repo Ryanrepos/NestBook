@@ -19,16 +19,13 @@ export class User {
   @Field(() => String)
   userEmail: string;
 
-  @Field(() => String)
-  userNick: string;
-
   // ⚠️ Password hech qachon GraphQL'da qaytmaydi!
   userPassword?: string;
 
   @Field(() => String, { nullable: true })
   userFullName?: string;
 
-  @Field(() => String)
+  @Field(() => String, { nullable: true })
   userImage: string;
 
   @Field(() => String, { nullable: true })
