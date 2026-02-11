@@ -29,23 +29,13 @@ export class UserService {
       throw new BadRequestException(Message.USED_EMAIL_OR_USERNAME);
     }
 
-    // 2. Check if username already exists
-    const existingNick = await this.userModel.findOne({
-      userNick: input.userNick,
-    });
-
-    if (existingNick) {
-      this.logger.warn(`Username already exists: ${input.userNick}`);
-      throw new BadRequestException(Message.USED_EMAIL_OR_USERNAME);
-    }
-
-    // 3. Hash password
+    // 2. Hash password
     const hashedPassword = await this.authService.hashPassword(
       input.userPassword,
     );
 
     try {
-      // 4. Create user with defaults
+      // 3. Create user with defaults
       const createdUser = await this.userModel.create({
         ...input,
         userPassword: hashedPassword,
@@ -54,10 +44,10 @@ export class UserService {
 
       this.logger.log(`User created successfully: ${createdUser._id}`);
 
-      // 5. Generate JWT token
+      // 4. Generate JWT token
       const token = await this.authService.createToken(createdUser);
 
-      // 6. Return user with token (password excluded by DTO)
+      // 5. Return user with token (password excluded by DTO)
       return {
         ...createdUser.toObject(),
         accessToken: token,
@@ -93,10 +83,9 @@ export class UserService {
     }
 
     // Verify password
-   const isPasswordValid = await this.authService.comparePassword(
+    const isPasswordValid = await this.authService.comparePassword(
     input.userPassword,
-    user.userPassword as string,  
-);
+    user.userPassword as string);
 
     if (!isPasswordValid) {
         throw new BadRequestException(Message.WRONG_PASSWORD);
