@@ -2,6 +2,9 @@ import { Args, Mutation, Query, Resolver } from '@nestjs/graphql';
 import { UserService } from './user.service';
 import { User } from '../../libs/dto/user/user';
 import { UserLoginInput, UserSignupInput } from 'src/libs/dto/user/user.input';
+import { UseGuards } from '@nestjs/common';
+import { AuthGuard } from '../auth/guards/auth.guards';
+import { AuthUser } from '../auth/decorators/authUser.decorator';
 
 @Resolver()
 export class UserResolver {
@@ -19,8 +22,16 @@ export class UserResolver {
         return await this.userService.signIn(input);
     }
 
-     @Query(() => String)
-     hello(): string {
-     return 'Hello from NestBook API! 🚀';
+     @Query(() => User)
+     @UseGuards(AuthGuard)
+     async getMe(@AuthUser() user: User): Promise<User> {
+        return user;
+     }
+
+     @Query(() => User)
+     public async getUser(@Args("userId") userId: string): Promise<User> {
+        return await this.userService.getUser(userId);
+     }
+
+     
   }
-}

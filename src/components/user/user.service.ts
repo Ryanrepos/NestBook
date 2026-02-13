@@ -1,4 +1,4 @@
-import { BadRequestException, Injectable, InternalServerErrorException, Logger } from '@nestjs/common';
+import { BadRequestException, Injectable, InternalServerErrorException, Logger, NotFoundException } from '@nestjs/common';
 import { InjectModel } from '@nestjs/mongoose';
 import { Model } from 'mongoose';
 import { User } from 'src/libs/dto/user/user';
@@ -94,5 +94,25 @@ export class UserService {
         ...user.toObject(),
         accessToken: token,
     } as User;
-}
+ }
+
+ public async getUser(userId: string): Promise<User> {
+    this.logger.log(`Get user by ID: ${userId}`);
+
+    const user = await this.userModel.findById(userId).exec();
+
+    if (!user) {
+      this.logger.warn(`User not found: ${userId}`);
+      throw new NotFoundException(Message.NO_USER_FOUND);
+    }
+
+    if(user.userStatus === UserStatus.DELETED) {
+      this.logger.warn(`User is deleted: ${userId}`);
+      throw new NotFoundException(Message.NO_USER_FOUND);
+    }
+
+    this.logger.log(`User found: ${user.userEmail}`);
+
+    return user;
+ }
 }
