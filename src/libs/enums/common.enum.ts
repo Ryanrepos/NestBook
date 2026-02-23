@@ -44,4 +44,5 @@ export enum Direction {
 
 registerEnumType(Direction, {
   name: 'Direction',
+  description: 'Sort direction',
 });

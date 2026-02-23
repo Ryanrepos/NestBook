@@ -1,11 +1,13 @@
 import { BadRequestException, Injectable, InternalServerErrorException, Logger, NotFoundException } from '@nestjs/common';
 import { InjectModel } from '@nestjs/mongoose';
-import { Model } from 'mongoose';
-import { User } from 'src/libs/dto/user/user';
-import { UserLoginInput, UserSignupInput } from 'src/libs/dto/user/user.input';
+import { Model, ObjectId } from 'mongoose';
+import { User, Users } from 'src/libs/dto/user/user';
+import { UserLoginInput, UserSignupInput, UsersInput } from 'src/libs/dto/user/user.input';
 import { AuthService } from '../auth/auth.service';
-import { Message } from 'src/libs/enums/common.enum';
+import { Direction, Message } from 'src/libs/enums/common.enum';
 import { UserStatus } from 'src/libs/enums/user.enum';
+import { UserUpdate } from 'src/libs/dto/user/user.update';
+import { T } from 'src/libs/types/common';
 
 @Injectable()
 export class UserService {
@@ -115,4 +117,84 @@ export class UserService {
 
     return user;
  }
+
+ public async updateUser(input: UserUpdate, userId: ObjectId): Promise<User> {
+    this.logger.log(`Update user: ${userId}`);
+
+    const updateUser = await this.userModel.findByIdAndUpdate(
+      {
+        _id: userId,
+        UserStatus: UserStatus.ACTIVE,
+      }, 
+      {
+        input,
+      },
+      {
+        new: true,
+      }
+    )
+    .exec();
+
+    if (!updateUser) throw new InternalServerErrorException(Message.UPDATE_FAILED);
+
+    updateUser.accessToken = await this.authService.createToken(updateUser);
+
+    return updateUser;
+ }
+
+  public async getUsers(input: UsersInput): Promise<Users> {
+    const { userStatus, userRole, text } = input.search;
+
+    // Build match object
+    const match: T = {};
+
+    if (userStatus) match.userStatus = userStatus;
+    if (userRole) match.userRole = userRole;
+
+    // Search in both email and fullName
+    if (text) {
+      match.$or = [
+        { userEmail: { $regex: new RegExp(text, 'i') } },
+        { userFullName: { $regex: new RegExp(text, 'i') } }
+      ];
+    }
+
+    // Build sort object
+    const sort: T = {
+      [input?.sort ?? 'createdAt']: input?.direction ?? Direction.DESC
+    };
+
+    console.log('match:', match);
+    console.log('sort:', sort);
+
+    const result = await this.userModel
+      .aggregate([
+        { $match: match },
+        { $sort: sort },
+        {
+          $facet: {
+            list: [
+              { $skip: (input.page - 1) * input.limit },
+              { $limit: input.limit }
+            ],
+            metaCounter: [{ $count: 'total' }]
+          }
+        }
+      ])
+      .exec();
+
+    if (!result.length) {
+      throw new InternalServerErrorException(Message.NO_DATA_FOUND);
+    }
+
+    const { list, metaCounter } = result[0];
+    const total = metaCounter.length > 0 ? metaCounter[0].total : 0;
+
+    this.logger.log(`Found ${list.length} users, total: ${total}`);
+
+    return {
+      list,
+      total,
+    };
+  }
 }
