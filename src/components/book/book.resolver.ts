@@ -3,7 +3,7 @@ import { BookService } from './book.service';
 import { UseGuards } from '@nestjs/common';
 import { AuthGuard } from '../auth/guards/auth.guards';
 import { Book, Books } from 'src/libs/dto/book/book';
-import { BookInput, BooksInput } from 'src/libs/dto/book/book.input';
+import { BookInput, BooksInput, MyBooksInput } from 'src/libs/dto/book/book.input';
 import { AuthUser } from '../auth/decorators/authUser.decorator';
 import * as mongoose from 'mongoose';
 
@@ -37,5 +37,18 @@ export class BookResolver {
   public async getBooks(@Args('input') input: BooksInput): Promise<Books> {
     return await this.bookService.getBooks(input);
   }
+
+  @UseGuards(AuthGuard)
+  @Mutation(() => Boolean)
+  public async deleteBook(@Args('bookId') bookId: string, @AuthUser('_id') userId: mongoose.ObjectId): Promise<boolean> {
+    return await this.bookService.deleteBook(bookId, userId);
+  }
+
+  @UseGuards(AuthGuard)
+  @Query(() => Books)
+  public async getMyBooks(@Args('input') input: MyBooksInput,
+    @AuthUser('_id') userId: mongoose.ObjectId): Promise<Books> {
+      return await this.bookService.getMyBooks(input, userId);
+    }
 
 }

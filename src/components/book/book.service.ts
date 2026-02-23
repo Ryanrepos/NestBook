@@ -2,7 +2,7 @@ import { BadRequestException, ForbiddenException, Inject, Injectable, InternalSe
 import { InjectModel } from '@nestjs/mongoose';
 import { Model, ObjectId, Schema } from 'mongoose';
 import { Book, Books } from 'src/libs/dto/book/book';
-import { BookInput, BooksInput } from 'src/libs/dto/book/book.input';
+import { BookInput, BooksInput, MyBooksInput } from 'src/libs/dto/book/book.input';
 import { User } from 'src/libs/dto/user/user';
 import { BookStatus } from 'src/libs/enums/book.enum';
 import { Direction, Message } from 'src/libs/enums/common.enum';
@@ -150,6 +150,106 @@ export class BookService {
     };
   } catch (err) {
     this.logger.error(`Error fetching books: ${err.message}`);
+    throw new InternalServerErrorException(Message.NO_DATA_FOUND);
+  }
+}
+
+public async deleteBook(bookId: string, userId: ObjectId): Promise<boolean> {
+  this.logger.log(`Deleting book: ${bookId} by user: ${userId}`);
+  
+  const book = await this.bookModel.findById(bookId).exec();
+
+  if (!book) {
+    this.logger.warn(`Book not found: ${bookId}`);
+    throw new NotFoundException(Message.BOOK_NOT_FOUND);
+  }
+
+  if (book.bookStatus === BookStatus.DELETE) {
+    this.logger.warn(`Book already deleted: ${bookId}`);
+    throw new NotFoundException(Message.BOOK_NOT_FOUND);
+  }
+
+  if (book.memberId.toString() !== userId.toString()) {
+    this.logger.warn(`User ${userId} is not owner of book ${bookId}`);
+    throw new ForbiddenException(Message.NOT_ALLOWED);
+  }
+
+  try {
+    await this.bookModel.findByIdAndUpdate(
+      bookId,
+      {
+        bookStatus: BookStatus.DELETE,
+        deletedAt: new Date()
+      }
+    ).exec();
+
+    await this.userModel.findByIdAndUpdate(
+      userId,
+      { $inc: { userBooks: -1 } }
+    ).exec();
+
+    this.logger.log(`Book deleted successfully: ${bookId}`);
+    return true;
+  } catch (err) {
+    this.logger.error(`Delete book error: ${err.message}`);
+    throw new InternalServerErrorException(Message.REMOVE_FAILED);
+  }
+}
+
+public async getMyBooks(input: MyBooksInput, userId: ObjectId): Promise<Books> {
+  const { 
+    page = 1, 
+    limit = 10, 
+    bookStatus 
+  } = input;
+
+  this.logger.log(`Fetching my books: page ${page}, limit ${limit}, userId: ${userId}`);
+
+  const match: any = {
+    memberId: userId,  
+  };
+
+  if (bookStatus) {
+    match.bookStatus = bookStatus;  
+  } else {
+    match.bookStatus = { $ne: BookStatus.DELETE };  
+  }
+
+  const sortObject: any = { createdAt: -1 };
+
+  try {
+    // Execute aggregation
+    const result = await this.bookModel
+      .aggregate([
+        { $match: match },
+        { $sort: sortObject },
+        {
+          $facet: {
+            list: [
+              { $skip: (page - 1) * limit },
+              { $limit: limit }
+            ],
+            metaCounter: [{ $count: 'total' }]
+          }
+        }
+      ])
+      .exec();
+
+    if (!result.length) {
+      throw new InternalServerErrorException(Message.NO_DATA_FOUND);
+    }
+
+    const { list, metaCounter } = result[0];
+    const total = metaCounter.length > 0 ? metaCounter[0].total : 0;
+
+    this.logger.log(`Found ${list.length} books, total: ${total}`);
+
+    return {
+      list,
+      total,
+    };
+  } catch (err) {
+    this.logger.error(`Error fetching my books: ${err.message}`);
     throw new InternalServerErrorException(Message.NO_DATA_FOUND);
   }
 }
