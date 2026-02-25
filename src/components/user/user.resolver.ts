@@ -7,6 +7,9 @@ import { AuthGuard } from '../auth/guards/auth.guards';
 import { AuthUser } from '../auth/decorators/authUser.decorator';
 import { UserUpdate } from 'src/libs/dto/user/user.update';
 import type { ObjectId } from 'mongoose';
+import { UserRole } from 'src/libs/enums/user.enum';
+import { Roles } from '../auth/decorators/roles.decorator';
+import { RolesGuard } from '../auth/guards/roles.guard';
 
 @Resolver()
 export class UserResolver {
@@ -43,5 +46,12 @@ export class UserResolver {
      @Query(() => Users)
      public async getUsers(@Args('input') input: UsersInput): Promise<Users> {
          return await this.userService.getUsers(input);
+     }
+
+     @Roles(UserRole.ADMIN)
+     @UseGuards(RolesGuard)
+     @Mutation(() => Boolean)
+     public async deleteUser(@Args('userId') userId: string, @AuthUser('_id') adminId: ObjectId): Promise<boolean> {
+        return await this.userService.deleteUser(userId, adminId);
      }
   }

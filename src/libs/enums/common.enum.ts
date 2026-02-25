@@ -10,6 +10,7 @@ export enum Message {
   UPLOAD_FAILED = 'Upload failed!',
   BAD_REQUEST = 'Bad Request!',
   NOT_ALLOWED = 'Not allowed!',
+  ALREADY_DELETED_USER = 'Already deleted user',
 
   // Authentication Messages
   USED_EMAIL_OR_USERNAME = 'Already used email or username!',

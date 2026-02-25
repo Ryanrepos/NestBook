@@ -5,6 +5,7 @@ import { BookModule } from './book/book.module';
 import { ReviewModule } from './review/review.module';
 import { LikeModule } from './like/like.module';
 import { ViewModule } from './view/view.module';
+import { OrderModule } from './order/order.module';
 
 @Module({
   imports: [
@@ -14,6 +15,7 @@ import { ViewModule } from './view/view.module';
     ReviewModule,
     LikeModule,
     ViewModule,
+    OrderModule,
   ],
   exports: [
     AuthModule,

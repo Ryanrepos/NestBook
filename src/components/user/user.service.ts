@@ -197,4 +197,28 @@ export class UserService {
       total,
     };
   }
+
+  public async deleteUser(userId: string, adminId: ObjectId): Promise<boolean> {
+
+    const user = await this.userModel.findById(userId).exec();
+
+    if(!user) throw new NotFoundException(Message.NO_USER_FOUND);
+
+    if (user.userStatus === UserStatus.DELETED) throw new BadRequestException(Message.ALREADY_DELETED_USER);
+    
+    if (user._id.toString() === adminId.toString()) {
+      throw new BadRequestException("Can't delete yourself");
+    }
+
+    try {
+      await this.userModel.findByIdAndUpdate(userId, {
+        userStatus: UserStatus.DELETED,
+        deletedAt: new Date(),
+      }).exec();
+      return true;
+    } catch (err) {
+      throw new InternalServerErrorException(Message.REMOVE_FAILED);
+    }
+
+  }
 }
