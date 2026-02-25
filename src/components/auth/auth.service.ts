@@ -30,18 +30,13 @@ export class AuthService {
   }
 
   // JWT token yaratish
-  public async createToken(user: User): Promise<string> {
-    console.log('user:', user);
-    const payload: T = { userNick: 'TEST' };
-
-    // User ma'lumotlarini payload'ga ko'chirish
-    Object.keys(user['_doc'] ? user['_doc'] : user).map((ele) => {
-      payload[`${ele}`] = user[`${ele}`];
-    });
-    
-    // Password'ni o'chirish (xavfsizlik)
-    delete payload.userPassword;
-    console.log('payload:', payload);
+ public async createToken(user: User): Promise<string> {
+    const payload = {
+      _id: user._id.toString(),
+      userEmail: user.userEmail,
+      userRole: user.userRole,
+      userStatus: user.userStatus,
+    };
 
     return await this.jwtService.signAsync(payload);
   }

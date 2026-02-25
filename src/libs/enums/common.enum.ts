@@ -9,6 +9,8 @@ export enum Message {
   REMOVE_FAILED = 'Remove failed!',
   UPLOAD_FAILED = 'Upload failed!',
   BAD_REQUEST = 'Bad Request!',
+  NOT_ALLOWED = 'Not allowed!',
+  ALREADY_DELETED_USER = 'Already deleted user',
 
   // Authentication Messages
   USED_EMAIL_OR_USERNAME = 'Already used email or username!',
@@ -44,4 +46,5 @@ export enum Direction {
 
 registerEnumType(Direction, {
   name: 'Direction',
+  description: 'Sort direction',
 });
