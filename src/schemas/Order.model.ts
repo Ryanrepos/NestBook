@@ -22,19 +22,25 @@ const OrderSchema = new Schema(
       ref: 'User',
     },
 
-    // Book being ordered
-    bookId: {
+    // Books being ordered (CHANGED TO ARRAY)
+    bookIds: [{  // ← Changed from bookId to bookIds (array)
       type: Schema.Types.ObjectId,
       required: true,
       ref: 'Book',
-    },
+    }],
 
-    // Seller (book owner)
-    sellerId: {
+    // Sellers (book owners) - ARRAY since multiple books can have different owners
+    sellerIds: [{  // ← Changed from sellerId to sellerIds (array)
       type: Schema.Types.ObjectId,
       required: true,
       ref: 'User',
-    },
+    }],
+
+    // Individual book prices (to track price at time of order)
+    bookPrices: [{  // ← New field: price of each book
+      type: Number,
+      required: true,
+    }],
 
     // Soft delete
     deletedAt: {
@@ -50,8 +56,8 @@ const OrderSchema = new Schema(
 
 // Indexes
 OrderSchema.index({ buyerId: 1 });
-OrderSchema.index({ sellerId: 1 });
-OrderSchema.index({ bookId: 1 });
+OrderSchema.index({ 'sellerIds': 1 });
+OrderSchema.index({ 'bookIds': 1 });
 OrderSchema.index({ orderStatus: 1 });
 OrderSchema.index({ createdAt: -1 });
 

@@ -5,18 +5,24 @@ import {
   Min, 
   Max, 
   IsEnum, 
-  IsMongoId 
+  IsMongoId,
+  IsArray,
+  ArrayMinSize,
+  ArrayMaxSize
 } from 'class-validator';
-import { OrderStatus, OrderType } from '../../enums/order.enum';
+import { OrderStatus } from '../../enums/order.enum';
 import { Direction } from '../../enums/common.enum';
 
-// ========== CREATE ORDER (BUY ONLY) ==========
+// ========== CREATE ORDER (MULTIPLE BOOKS) ==========
 @InputType()
 export class OrderInput {
   @IsNotEmpty()
-  @IsMongoId()
-  @Field(() => String)
-  bookId: string;
+  @IsArray()
+  @ArrayMinSize(1, { message: 'At least one book is required' })
+  @ArrayMaxSize(20, { message: 'Maximum 20 books per order' })
+  @IsMongoId({ each: true })
+  @Field(() => [String])
+  bookIds: string[];  // ← Changed to array
 }
 
 // ========== UPDATE ORDER STATUS ==========
